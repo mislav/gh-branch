@@ -78,4 +78,4 @@ tableize() {
 
 selected="$(render | fzf)"
 [ -n "$selected" ] || exit 1
-echo git checkout "${selected%% *}"
+git checkout "${selected%% *}"
