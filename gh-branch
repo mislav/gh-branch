@@ -1,0 +1,81 @@
+#!/bin/bash
+set -e
+
+help() {
+  cat <<EOF
+Usage: gh branch
+
+Displays an interactive branch switcher that lists local branches in relation
+to the pull requests in the repository. The selected branch is checked out.
+
+Dependencies: fzf
+EOF
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+  -h|--help)
+    help
+    exit 0
+    ;;
+  *)
+    help >&2
+    exit 1
+    ;;
+  esac
+  shift
+done
+
+if ! type -p fzf >/dev/null; then
+  echo "error: install \`fzf\` to use this command" >&2
+fi
+
+branch_info() {
+  git for-each-ref 'refs/heads/*' --format='%(refname:short)%09%(committerdate:unix)%09%(committerdate:relative)%09%(HEAD)'
+}
+
+list_prs() {
+  gh api graphql --cache=1h -F owner='{owner}' -F repo='{repo}' -f query='
+    query ($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(last: 100) {
+          nodes {
+            number
+            author {
+              login
+            }
+            state
+            headRefName
+          }
+        }
+      }
+    }
+  ' --jq '.data.repository.pullRequests.nodes[] | [.number,.author.login,.state,.headRefName] | @tsv'
+}
+
+find_pr() {
+  local number author head_branch
+  while IFS=$'\t' read -r number author _ head_branch; do
+    if [ "$1" = "$head_branch" ]; then
+      printf "\t#%s by %s" "$number" "$author"
+      break
+    fi
+  done
+}
+
+render() {
+  local branch timeago current all_prs
+  all_prs="$(list_prs)"
+  branch_info | sort -k2 -r | while IFS=$'\t' read -r branch _ timeago current _; do
+    [ "$current" = "*" ] && continue
+    printf "%s\t%s%s\n" "$branch" "$timeago" "$(find_pr "$branch" <<<"$all_prs")"
+  done | tableize
+}
+
+tableize() {
+  column -t -s$'\t'
+}
+
+selected="$(render | fzf)"
+[ -n "$selected" ] || exit 1
+echo git checkout "${selected%% *}"
