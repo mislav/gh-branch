@@ -8,15 +8,23 @@ Usage: gh branch
 Displays an interactive branch switcher that lists local branches in relation
 to the pull requests in the repository. The selected branch is checked out.
 
+You can also select multiple branches with Tab and press Ctrl-D to delete them.
+
+With \`--static\`, print a non-interactive list of branches.
+
 Dependencies: fzf
 EOF
 }
 
+static=
 while [ $# -gt 0 ]; do
   case "$1" in
   -h|--help)
     help
     exit 0
+    ;;
+  --static)
+    static=1
     ;;
   *)
     help >&2
@@ -35,7 +43,7 @@ branch_info() {
 }
 
 list_prs() {
-  gh api graphql --cache=1h -F owner='{owner}' -F repo='{repo}' -f query='
+  gh api graphql --cache=5m -F owner='{owner}' -F repo='{repo}' -f query='
     query ($owner: String!, $repo: String!) {
       repository(owner: $owner, name: $repo) {
         pullRequests(last: 100) {
@@ -50,14 +58,23 @@ list_prs() {
         }
       }
     }
-  ' --jq '.data.repository.pullRequests.nodes[] | [.number,.author.login,.state,.headRefName] | @tsv'
+  ' --template '
+    {{- range .data.repository.pullRequests.nodes -}}
+      {{- .headRefName | printf "%s\t" -}}
+      {{- $stateColor := "green" -}}
+      {{- if eq .state "CLOSED" }}{{ $stateColor = "red" }}
+      {{- else if eq .state "MERGED" }}{{ $stateColor = "magenta" }}{{ end -}}
+      {{- .number | printf "#%.0f" | color $stateColor -}}
+      {{- .author.login | printf " by %s\n" -}}
+    {{- end -}}
+  '
 }
 
 find_pr() {
-  local number author head_branch
-  while IFS=$'\t' read -r number author _ head_branch; do
+  local head_branch rest
+  while IFS=$'\t' read -r head_branch rest; do
     if [ "$1" = "$head_branch" ]; then
-      printf "\t#%s by %s" "$number" "$author"
+      printf "\t%s" "$rest"
       break
     fi
   done
@@ -76,6 +93,15 @@ tableize() {
   column -t -s$'\t'
 }
 
-selected="$(render | fzf)"
+if [ -n "$static" ]; then
+  render
+  exit 0
+fi
+
+choose() {
+  render | fzf --ansi --multi --bind "ctrl-d:execute-silent(git branch -D {+1})+reload(\"$0\" --static)"
+}
+
+selected="$(choose)"
 [ -n "$selected" ] || exit 1
 git checkout "${selected%% *}"
