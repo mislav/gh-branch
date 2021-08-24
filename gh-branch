@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
 done
 
 branch_info() {
-  git for-each-ref 'refs/heads/*' --format='%(refname:short)%09%(committerdate:unix)%09%(committerdate:relative)%09%(HEAD)'
+  git for-each-ref 'refs/heads/**' --format='%(refname:short)%09%(committerdate:unix)%09%(committerdate:relative)%09%(HEAD)'
 }
 
 list_prs() {
