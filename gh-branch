@@ -36,6 +36,7 @@ done
 
 if ! type -p fzf >/dev/null; then
   echo "error: install \`fzf\` to use this command" >&2
+  exit 1
 fi
 
 branch_info() {
