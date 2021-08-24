@@ -77,7 +77,7 @@ find_pr() {
 
 render() {
   local branch timeago current all_prs
-  all_prs="$(list_prs)"
+  all_prs="$(list_prs 2>/dev/null || true)"
   branch_info | sort -k2 -r | while IFS=$'\t' read -r branch _ timeago current _; do
     [ "$current" = "*" ] && continue
     printf "%s\t%s%s\n" "$branch" "$timeago" "$(find_pr "$branch" <<<"$all_prs")"
