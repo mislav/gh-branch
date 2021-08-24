@@ -34,11 +34,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if ! type -p fzf >/dev/null; then
-  echo "error: install \`fzf\` to use this command" >&2
-  exit 1
-fi
-
 branch_info() {
   git for-each-ref 'refs/heads/*' --format='%(refname:short)%09%(committerdate:unix)%09%(committerdate:relative)%09%(HEAD)'
 }
@@ -97,6 +92,11 @@ tableize() {
 if [ -n "$static" ]; then
   render
   exit 0
+fi
+
+if ! type -p fzf >/dev/null; then
+  echo "error: install \`fzf\` to use this command" >&2
+  exit 1
 fi
 
 choose() {
