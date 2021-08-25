@@ -5,9 +5,9 @@ Installation:
 gh extension install mislav/gh-branch
 ```
 
-This extension depends on [fzf](https://github.com/junegunn/fzf#readme) as a fuzzy finder. To install using Homebrew:
+This extension depends on [peco](https://github.com/peco/peco) as a fuzzy finder. To install using Homebrew:
 ```
-brew install fzf
+brew install peco
 ```
 
 Usage:
