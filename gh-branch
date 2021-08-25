@@ -76,9 +76,10 @@ find_pr() {
 }
 
 render() {
-  local branch timeago current all_prs
+  local branches branch timeago current all_prs
+  branches="$(branch_info)" || return 1
   all_prs="$(list_prs 2>/dev/null || true)"
-  branch_info | sort -k2 -r | while IFS=$'\t' read -r branch _ timeago current _; do
+  sort -k2 -r <<<"$branches" | while IFS=$'\t' read -r branch _ timeago current _; do
     [ "$current" = "*" ] && continue
     printf "%s\t%s%s\n" "$branch" "$timeago" "$(find_pr "$branch" <<<"$all_prs")"
   done | tableize
@@ -99,7 +100,10 @@ if ! type -p fzf >/dev/null; then
 fi
 
 choose() {
-  render | fzf --ansi #--multi --bind "ctrl-d:execute-silent(git branch -D {+1})+reload(\"$0\" --static)"
+  local rendered
+  rendered="$(render)" || return 1
+  #--multi --bind "ctrl-d:execute-silent(git branch -D {+1})+reload(\"$0\" --static)"
+  fzf --ansi <<<"$rendered"
 }
 
 selected="$(choose)"
