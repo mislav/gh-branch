@@ -10,7 +10,7 @@ to the pull requests in the repository. The selected branch is checked out.
 
 With \`--static\`, print a non-interactive list of branches.
 
-Dependencies: fzf
+Dependencies: peco
 EOF
 # You can also select multiple branches with Tab and press Ctrl-D to delete them.
 }
@@ -93,13 +93,13 @@ if [ -n "$static" ]; then
   exit 0
 fi
 
-if ! type -p fzf >/dev/null; then
-  echo "error: install \`fzf\` to use this command" >&2
+if ! type -p peco >/dev/null; then
+  echo "error: install \`peco\` to use this command" >&2
   exit 1
 fi
 
 choose() {
-  render | fzf --ansi #--multi --bind "ctrl-d:execute-silent(git branch -D {+1})+reload(\"$0\" --static)"
+  render | peco --prompt '[branch]'
 }
 
 selected="$(choose)"
