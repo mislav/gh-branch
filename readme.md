@@ -1,6 +1,8 @@
 # `gh branch` GitHub CLI extension
 
-Installation:
+[GitHub CLI](https://github.com/cli/cli) extension for fuzzy finding, quickly switching between, and deleting branches. 
+
+## Installation
 ```
 gh extension install mislav/gh-branch
 ```
@@ -10,7 +12,7 @@ This extension depends on [fzf](https://github.com/junegunn/fzf#readme) as a fuz
 brew install fzf
 ```
 
-Usage:
+## Usage
 ```
 gh branch
 ```
