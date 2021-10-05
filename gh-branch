@@ -131,7 +131,7 @@ choose() {
       --ansi <<<"$rendered"
   elif [ -n "$diff" ]; then
     fzf \
-      --preview="echo {5} | cut -c2- | xargs gh pr diff | if type -p bat &>/dev/null; then bat --style=plain --color=always; else cat; fi" \
+      --preview="echo {5} | cut -c2- | xargs gh pr diff | if type -p bat &>/dev/null; then bat -p -l diff --color=always; else cat; fi" \
       --header "<ctrl-d/u> scroll preview down/up, <ctrl-n/p> scroll next/prev PR" \
       --preview-window 'up,60%,border-bottom,+{2}+3/3,~3', \
       --bind ctrl-d:preview-down,ctrl-u:preview-up \
