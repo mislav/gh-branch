@@ -12,6 +12,8 @@ This extension depends on [fzf](https://github.com/junegunn/fzf#readme) as a fuz
 brew install fzf
 ```
 
+See the fzf documentation for details on installing on [Windows](https://github.com/junegunn/fzf#windows) and [Linux](https://github.com/junegunn/fzf#using-linux-package-managers)
+
 ## Usage
 ```
 gh branch
