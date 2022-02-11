@@ -8,14 +8,25 @@ Usage: gh branch
 Displays an interactive branch switcher that lists local branches in relation
 to the pull requests in the repository. The selected branch is checked out.
 
-With \`--static\`, print a non-interactive list of branches.
+Flags:
+  --static	Print a non-interactive list of branches.
+  -d|--diff	Print a diff preview of the changes.
+  -v|--view	Print a view of the PR description if there is one.
+
 
 Dependencies: fzf
+Optional dependencies: 
+  glow: make \`gh branch --view\` print a pretty and colorized version of the PR view.
+  	website: https://github.com/charmbracelet/glow
+  bat: make \`gh branch --diff\` print a colorized version of the diff.
+  	website: https://github.com/sharkdp/bat
 EOF
 # You can also select multiple branches with Tab and press Ctrl-D to delete them.
 }
 
 static=
+diff=
+view=
 while [ $# -gt 0 ]; do
   case "$1" in
   -h|--help)
@@ -24,6 +35,14 @@ while [ $# -gt 0 ]; do
     ;;
   --static)
     static=1
+    ;;
+  -d|--diff)
+    [ -n "$view" ] && echo "view and diff can not both be set" && exit 1
+    diff=1
+    ;;
+  -v|--view)
+    [ -n "$diff" ] && echo "view and diff can not both be set" && exit 1
+    view=1
     ;;
   *)
     help >&2
@@ -59,8 +78,8 @@ list_prs() {
       {{- $stateColor := "green" -}}
       {{- if eq .state "CLOSED" }}{{ $stateColor = "red" }}
       {{- else if eq .state "MERGED" }}{{ $stateColor = "magenta" }}{{ end -}}
-      {{- .number | printf "#%.0f" | color $stateColor -}}
-      {{- .author.login | printf " by %s\n" -}}
+      {{- .number | printf "\t#%.0f" | color $stateColor -}}
+      {{- .author.login | printf "\tby %s\n" -}}
     {{- end -}}
   '
 }
@@ -103,7 +122,23 @@ choose() {
   local rendered
   rendered="$(render)" || return 1
   #--multi --bind "ctrl-d:execute-silent(git branch -D {+1})+reload(\"$0\" --static)"
-  fzf --ansi <<<"$rendered"
+  if [ -n "$view" ]; then
+    fzf \
+      --preview="echo {5} | cut -c2- | xargs gh pr view | if type -p glow &>/dev/null; then glow --style dark -; else cat; fi" \
+      --header "<ctrl-d/u> scroll preview down/up, <ctrl-n/p> scroll next/prev PR" \
+      --preview-window 'up,60%,border-bottom,+{2}+3/3,~3', \
+      --bind ctrl-d:preview-down,ctrl-u:preview-up \
+      --ansi <<<"$rendered"
+  elif [ -n "$diff" ]; then
+    fzf \
+      --preview="echo {5} | cut -c2- | xargs gh pr diff | if type -p bat &>/dev/null; then bat -p -l diff --color=always; else cat; fi" \
+      --header "<ctrl-d/u> scroll preview down/up, <ctrl-n/p> scroll next/prev PR" \
+      --preview-window 'up,60%,border-bottom,+{2}+3/3,~3', \
+      --bind ctrl-d:preview-down,ctrl-u:preview-up \
+      --ansi <<<"$rendered"
+  else
+    fzf --ansi <<<"$rendered"
+  fi
 }
 
 selected="$(choose)"
