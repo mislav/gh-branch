@@ -65,23 +65,20 @@ list_prs() {
   '
 }
 
-find_pr() {
-  local head_branch rest
-  while IFS=$'\t' read -r head_branch rest; do
-    if [ "$1" = "$head_branch" ]; then
-      printf "\t%s" "$rest"
-      break
-    fi
-  done
-}
-
 render() {
-  local branches branch timeago current all_prs
-  branches="$(branch_info)" || return 1
-  all_prs="$(list_prs 2>/dev/null || true)"
+  local branches
+  exec 3< <(list_prs 2>/dev/null)
+  branches="$(branch_info)" || { exec 3<&-; return 1; }
+
+  declare -A prs
+  while IFS=$'\t' read -r head_branch rest; do
+    prs["$head_branch"]=$'\t'"$rest"
+  done <&3
+  exec 3<&-
+
   sort -k2 -r <<<"$branches" | while IFS=$'\t' read -r branch _ timeago current _; do
     [ "$current" = "*" ] && continue
-    printf "%s\t%s%s\n" "$branch" "$timeago" "$(find_pr "$branch" <<<"$all_prs")"
+    printf "%s\t%s%s\n" "$branch" "$timeago" "${prs[$branch]}"
   done | tableize
 }
 
